@@ -4,6 +4,10 @@ This is a Python Package for a Model to Identity Typeregions:
 
 more informations will follow soon:
 
+# German presentation about the model:
+
+(Presentation on speackerdeck)[https://speakerdeck.com/nailend/modell-zur-ableitung-von-typregionen-der-energieversorgung]
+
 
 # German installation informations:
 
