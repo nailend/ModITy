@@ -7,7 +7,7 @@ more informations will follow soon:
 ## German presentation about the model:
 
 
-[Presentation on speackerdeck](https://speakerdeck.com/nailend/modell-zur-ableitung-von-typregionen-der-energieversorgung)
+[Presentation on speakerdeck](https://speakerdeck.com/nailend/modell-zur-ableitung-von-typregionen-der-energieversorgung)
 
 
 ## German installation informations:
