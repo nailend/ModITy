@@ -1,4 +1,4 @@
-name: mein_cluster
+name: modity
 channels:
   - defaults
 dependencies:
@@ -161,5 +161,4 @@ dependencies:
     - scikit-learn==0.21.3
     - seaborn==0.9.0
     - sklearn==0.0
-prefix: /Users/Julian/opt/miniconda3/envs/mein_cluster
 
