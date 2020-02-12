@@ -240,3 +240,10 @@ TSWLatexianTemp*
 
 # generated if using elsarticle.cls
 *.spl
+
+
+# jupyter chechpoints
+./.ipynb_checkpoints/*
+
+# jupyter files
+*.ipynb
