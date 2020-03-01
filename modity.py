@@ -57,6 +57,7 @@ class Project:
         self.df_raw = None
         self.df_data = None
         self.memory = None
+        self.cmap_col = "Spectral_r"
 
     def jupyter_wrapper(self, dataframe):
         """ a wrapper function, test if still needed after import of
@@ -188,10 +189,13 @@ class Project:
         if code_type not in set(df_data.columns):
             raise ValueError('Column of {} is missing.'.format(code_type))
 
-        if (('NUTS3' in df_data.columns)
-                and (set(df_data['NUTS3']) == set(df_transfer['NUTS3']))):
-            df_data.set_index('NUTS3', drop=True, inplace=True)
-            print('NUTS3 assignment detected! Index was set!')
+        if 'NUTS3' in df_data.columns:
+            if set(df_data['NUTS3']) == set(df_transfer['NUTS3']):
+                df_data.set_index('NUTS3', drop=True, inplace=True)
+                print('NUTS3 assignment detected! Index was set!')
+            else:
+                df_data.set_index('NUTS3', drop=True, inplace=True)
+                print('NUTS3 assignment detected! Data Set is not complete!')
 
         else:
             # convert column to type string
@@ -223,7 +227,7 @@ class Project:
             df_data.set_index('NUTS3', drop=True, inplace=True)
             df_data.drop(columns=code_type, inplace=True)
             print('NUTS3 assigned data saved to df_data.')
-            
+
         self.df_data = df_data
         self.all_columns = df_data.columns
         self.all_index = df_data.index
@@ -242,7 +246,7 @@ class Project:
         df_transfer['index'] = df_transfer['NUTS3']
         df_transfer.set_index('Index', drop=True, inplace=True)
         self.df_transfer = df_transfer
-        
+
     def import_data_file(self, file, code_type):
         self.df_raw = file.copy()
         print('file imported')
@@ -294,6 +298,7 @@ class Project:
                       'scores': None,
                       'labels': {},
                       'scaler': None,
+                      'borderliner': {},
                       }}
 
         self.memory = memory
@@ -347,7 +352,7 @@ class Project:
                 axis=1).sort_values(ascending=False).to_frame(
                 'exceeded pos. limits')
             # dict_outliers.update(dict.fromkeys(pos_samples.index, False))
-            # oop einbinden self.df_transfer   
+            # oop einbinden self.df_transfer
             df_pos_features = (df_robust > pos_threshold).sum().sort_values(
                 ascending=False).to_frame('exceeded pos. limits')
 
@@ -558,7 +563,7 @@ class Project:
             fig.suptitle('Heatmap: {} correlation of memory_set {}'.format(
                 method, memory_set),
                          fontsize=20)
-            cmap = cm.get_cmap("Spectral_r")
+            cmap = cm.get_cmap(self.cmap_col)
             with sns.axes_style("white"):
                 sns.heatmap(df_corr, mask=mask, square=True, linewidths=1,
                             vmax=1, vmin=-1, cbar=False, fmt='.2f',
@@ -737,10 +742,10 @@ class Project:
         """
         df_data = self.df_data.copy()
         memory = self.memory
-        
+
         if memory_set not in range(max(memory.keys())+1):
             raise ValueError('The key "' + str(memory_set) + '" does not yet exist in the memory.')
-    
+
         samples = {key for key, value in memory[memory_set]['samples'].items() if value}
         features = {key for key, value in memory[memory_set]['features'].items() if value}
         df_data = df_data.loc[samples, features].copy()
@@ -772,7 +777,7 @@ class Project:
             is_min = data == data.minx().min()
             return pd.DataFrame(np.where(is_min, attr, ''),
                                 index=data.index, columns=data.columns)
-    
+
     # highlight DataFrames max
     @staticmethod
     def highlight_max(data, color='red'):
@@ -946,10 +951,10 @@ class Project:
         the scaler is saved to the memory. If you want to change the scaler,
         you should use 'new=True' to generate a new memory_set
         :parameter
-        memory_set: int, 
+        memory_set: int,
         kmax: int,
         kmin: int,
-        scaler: str, 'standard', 'minmax', 'robust'
+        scaler: str, 'standard', 'minmax', 'robust', 'None'
         plot: bool
         new: bool, creates a new memory_set
         """
@@ -962,7 +967,7 @@ class Project:
 
         df_data = self.df_data.copy()
         memory = self.memory
-        
+
         last_key = max(memory.keys())
         if memory_set not in range(last_key + 1):
             raise ValueError('The key does not yet exist in the memory.')
@@ -973,14 +978,16 @@ class Project:
         features = {key for key, value in self.memory[memory_set]['features'].items() if
                     value}
         df_data = df_data.loc[samples, features].copy()
-    
-        df_transform = self.normalization(df_data, scaler)
+        if scaler:
+            df_transform = self.normalization(df_data, scaler)
+        else:
+            df_transform = df_data.copy()
         if new:
             new_sample_memory_set = deepcopy(self.memory[memory_set])
             memory_set = last_key + 1
             self.memory.update({memory_set: new_sample_memory_set})
             print('New memory set ' + str(memory_set) + ' was added!')
-    
+
         self.memory[memory_set]['scaler'] = scaler
         print('data set was normalized with ' + str(scaler) + '-scaler.')
         # initiate scores
@@ -988,9 +995,9 @@ class Project:
         score_silhouette = []
         score_calinski = []
         score_bouldin = []
-    
+
         for k in range(kmin, kmax + 1):
-            clustering = KMeans(n_clusters=k)
+            clustering = KMeans(n_clusters=k, n_init=50)
             clustering.fit(df_transform)
 
             # compute scores
@@ -1023,7 +1030,7 @@ class Project:
         """highlight the True in a Series or DataFrame"""
         attr = 'background-color: {}'.format(color)
         return [attr if v else '' for v in data]
-    
+
     # highlight DataFrames False
     @staticmethod
     def highlight_False(data, color='red'):
@@ -1100,11 +1107,11 @@ class Project:
         df_data = self.df_data.copy()
         memory = self.memory
         # info = kwargs.get('info', False)
-    
+
         # parameter check
         if not isinstance(memory_set, (int, bool)):
             raise ValueError(str(memory_set) + ' is no valid int/bool!')
-    
+
         samples = {key for key, value in memory[memory_set]['samples'].items()
                    if value}
         features = {key for key, value in memory[memory_set]['features'].items()
@@ -1117,28 +1124,32 @@ class Project:
         else:
             scaler = memory[memory_set]['scaler']
             print('Scaler was taken from memory.')
-        df_transform = self.normalization(df_data, scaler)
-        print('data set was normalized with ' + scaler)
+        if scaler:
+            df_transform = self.normalization(df_data, scaler)
+        else:
+            df_transform = df_data.copy()
+
+        print('data set was normalized with {}'.format(scaler))
         df_labels = pd.DataFrame(index=df_data.index)
         score_ssr = []
         score_silhouette = []
         score_calinski = []
         score_bouldin = []
-    
+
         for loop in range(max_loops):
-    
+
             # K-means Berechnung nach Auswahl der optimalen Cluster
             kmeans_l = KMeans(n_clusters=k_cluster).fit(
                 df_transform)
-    
+
             # Labels
             df_labels[loop] = kmeans_l.labels_
-    
+
             # mapping if more then one loop
             if loop > 0:
                 # correct cluster label mapping
                 df_labels = self.label_mapping(df_labels, k_cluster, loop)
-    
+
             # Scores
             score_ssr.append(
                 kmeans_l.inertia_)
@@ -1149,7 +1160,7 @@ class Project:
                 calinski_harabasz_score(df_data, kmeans_l.labels_))
             score_bouldin.append(
                 davies_bouldin_score(df_data, kmeans_l.labels_))
-    
+
         scores = np.array([score_ssr, score_silhouette, score_calinski,
                      score_bouldin])
         columns = ['ssr-score', 'silhouette-score', 'calinski-score',
@@ -1165,7 +1176,7 @@ class Project:
             self.highlight_min, subset=['ssr-score', 'bouldin-score']))
         # manipulate scores
         self.memory[memory_set]['scores']['looped'].at[k_cluster] = max_loops
-    
+
         # manipulate labels
         self.memory[memory_set]['labels'].update({k_cluster: df_labels})
 
@@ -1193,7 +1204,7 @@ class Project:
         df_cluster_sizes.index.name = 'cluster'
         df_cluster_sizes.columns.name = 'loop'
         df_cluster_sizes.sort_index(inplace=True)
-        cmap = cm.get_cmap("Spectral_r")
+        cmap = cm.get_cmap(self.cmap_col)
         self.jupyter_wrapper(df_cluster_sizes.style.background_gradient(
             cmap=cmap, axis=1))
         return df_cluster_sizes
@@ -1236,7 +1247,7 @@ class Project:
         return df_borderliner_sorted
 
     def plot_silhouettes(self, memory_set, k_cluster, loop, save=False,
-                         output=False):
+                         output=False, transform=True):
         """plots the silhouette scores for every samples of a computed
         clustering
 
@@ -1245,8 +1256,12 @@ class Project:
         k_cluster: int, number of clusters used in the clustering
         loop: int, specific loop which is selected"""
 
-        _, df_transform = self.get_dataset(memory_set)
-        data = df_transform.copy()
+
+        df_data, df_transform = self.get_dataset(memory_set)
+        if transform:
+            data = df_transform.copy()
+        else:
+            data = df_data
         cluster_labels = self.get_labels(memory_set, k_cluster, loop)
 
         # Compute the average silhouette score
@@ -1271,7 +1286,7 @@ class Project:
             size_cluster_i = ith_cluster_silhouette_values.shape[0]
             y_upper = y_lower + size_cluster_i
             # get colormap
-            cmap = cm.get_cmap("Spectral_r")
+            cmap = cm.get_cmap(self.cmap_col)
             color = cmap(float(i) / k_cluster)
             # plot area plots
             ax1.fill_betweenx(np.arange(y_lower, y_upper),
@@ -1405,13 +1420,13 @@ class Project:
         gdf_map = gdf_map_all.merge(labels, how='inner', left_on='NUTS_CODE',
                                 right_index=True)
 
-        cmap = cm.get_cmap("Spectral_r")
+        cmap = cm.get_cmap(self.cmap_col)
         cmd = self.cmap_discretize(cmap, N=k_cluster)
 
         # plot gdf
         fig, ax = plt.subplots(figsize=(10, 10))
-        gdf_map_all.plot(ax=ax, color='whitesmoke')
-        gdf_map.plot(ax=ax, column='cluster', cmap=cmd)  # , legend=True)
+        gdf_map_all.plot(ax=ax, color='silver', edgecolor='black')
+        gdf_map.plot(ax=ax, column='cluster', cmap=cmd, edgecolor='black')  # , legend=True)
 
         # manually create colorbar
         vmin, vmax = 0, k_cluster
@@ -1457,7 +1472,7 @@ class Project:
         n_districts = gdf_map_selected.shape[0]
         cbar = True
         if n_districts <= 20:
-            cmap = cm.get_cmap("Spectral_r")
+            cmap = cm.get_cmap(self.cmap_col)
 
         else:
             cbar = False
@@ -1465,10 +1480,10 @@ class Project:
             color = cmap(float(1) / 12)
 
         fig, ax = plt.subplots(figsize=(10, 10))
-        gdf_map.plot(ax=ax, color='whitesmoke')
+        gdf_map.plot(ax=ax, color='silver', edgecolor='black')
         if cbar:
             gdf_map_selected.plot(ax=ax, column='NUTS_NAME',
-                                  cmap=cmap)  # , legend=True)
+                                  cmap=cmap, edgecolor='black')  # , legend=True)
 
             # manually crate colorbar
             vmin, vmax = 0, n_districts
@@ -1563,12 +1578,12 @@ class Project:
 
         # create colormap
         n_cluster = gdf_map_selection.cluster.nunique()
-        cmap = cm.get_cmap("Spectral_r")
+        cmap = cm.get_cmap(self.cmap_col)
         cmd = self.cmap_discretize(cmap, N=n_cluster)
         # plot gdf
         fig, ax = plt.subplots(figsize=(10, 10))
-        gdf_map.plot(ax=ax, color='whitesmoke')
-        gdf_map_selection.plot(ax=ax, column='cluster', cmap=cmd)  # , legend=True)
+        gdf_map.plot(ax=ax, color='silver', edgecolor='black')
+        gdf_map_selection.plot(ax=ax, column='cluster', cmap=cmd, edgecolor='black')  # , legend=True)
 
         # manually create colorbar
         vmin, vmax = 0, n_cluster

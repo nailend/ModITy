@@ -1,11 +1,16 @@
-## ModITy - Model for the Identification of Typeregions
+# ModITy - Model for the Identification of Typeregions
 
 This is a Python Package for a Model to Identity Typeregions:
 
 more informations will follow soon:
 
+## German presentation about the model:
 
-# German installation informations:
+
+[Presentation on speakerdeck](https://speakerdeck.com/nailend/modell-zur-ableitung-von-typregionen-der-energieversorgung)
+
+
+## German installation informations:
 
 Um die Installation der benötigten Packages zu vereinfachen kann die enivronment.yml Datei
 genutzt werden um ein virtual environment mit allen nötigen packages zu installieren.
