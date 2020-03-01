@@ -10,7 +10,13 @@
 *.fot
 *.cb
 *.cb2
-.*.lb
+*.lb
+
+## sourcetree-files
+*.srctrlbm
+*.srctrldb
+*.srctrlprj
+
 
 ## Intermediate documents:
 *.dvi
