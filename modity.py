@@ -1550,6 +1550,34 @@ class Project:
         #self.jupyter_wrapper(df_typregions)
         return df_typregions
 
+
+    def create_memory_set(self, nuts3):
+        """ manually create memory_set  by nuts3 index
+        :parameter
+        nuts3: list, memory_set to be used
+        k_cluster: int, number of cluster used in the clustering
+        loop: int, specific loop which is selected
+        """
+
+        memory = self.memory
+        # create new memory_set
+        dict_new = dict.fromkeys(self.df_transfer.index, False)
+        # add nuts3 as ture
+        dict_true = dict.fromkeys(nuts3, True)
+        dict_new.update(dict_true)
+
+        # update memory_set
+        new_key = max(memory.keys()) + 1
+        # new dict_entry = copy of initialisation
+        new_sample_memory_set = deepcopy(memory[memory_set])
+        new_sample_memory_set['samples'].update(dict_new)
+        new_sample_memory_set['outlier'] = (memory_set, pos_threshold,
+                                            neg_threshold)
+        self.memory.update({new_key: new_sample_memory_set})
+
+        print('created new memory_set={}'.format(new_key))
+
+
     def plot_typregions(self, memory_set, k_cluster, loop, save=False):
         """ plots the typregions of a specific clustering
         :parameter
