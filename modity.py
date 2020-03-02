@@ -1548,7 +1548,7 @@ class Project:
                                   how='inner', left_on='NUTS3',
                                   right_index=True)
         #self.jupyter_wrapper(df_typregions)
-        return df_typregions
+        return (df_typregions, df_data)
 
     def plot_typregions(self, memory_set, k_cluster, loop, save=False):
         """ plots the typregions of a specific clustering
