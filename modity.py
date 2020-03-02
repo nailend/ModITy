@@ -1096,13 +1096,20 @@ class Project:
         return df_labels
 
     # loop_clustering
-    def loop_clustering(self, memory_set, k_cluster, max_loops, scaler=None):
+    def loop_clustering(self, memory_set, k_cluster, max_loops, scaler=None,
+                        n_init=10):
         """ loops kmeans for a specific numbers of clusters.
         :parameter
         memory_set: int, memory_set to be used
         k_cluster: int, number of clusters to be identified
         max_loops: int, number of loops for kmeans
         scaler: str, transformer to be used, default= taken from memory
+        n_init: int, Number iterations k-means algorithm will be run with
+        different centroid seeds,
+
+        for mor info check scikit-learn:
+        https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html
+
         """
         df_data = self.df_data.copy()
         memory = self.memory
@@ -1139,7 +1146,7 @@ class Project:
         for loop in range(max_loops):
 
             # K-means Berechnung nach Auswahl der optimalen Cluster
-            kmeans_l = KMeans(n_clusters=k_cluster).fit(
+            kmeans_l = KMeans(n_clusters=k_cluster, n_init=n_init).fit(
                 df_transform)
 
             # Labels
