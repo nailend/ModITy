@@ -1548,7 +1548,7 @@ class Project:
                                   how='inner', left_on='NUTS3',
                                   right_index=True)
         #self.jupyter_wrapper(df_typregions)
-        return (df_typregions, df_data)
+        return df_typregions, df_data
 
 
     def create_memory_set(self, nuts3):
